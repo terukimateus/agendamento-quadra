@@ -10,7 +10,7 @@ const mercadopago = axios.create({
     headers: {
         'accept': 'application/json',
         'content-type': 'application/json',
-        'Authorization': 'Bearer APP_USR-8088731663436559-070214-e9609b003c75ebc3040845ca702a6eaf-1884190882',
+        'Authorization': 'Bearer {token_ACESS_mercado}',
         'X-Idempotency-Key': `${uuid}`
     }
 });
