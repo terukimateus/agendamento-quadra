@@ -30,6 +30,22 @@ export default function Login() {
         window.location.href = `${window.location.origin}/home`;     
     };
 
+    const handleCep = async (ceps) => {
+        if(ceps.length == 8) {
+            try {
+                const res = await fetch(`https://viacep.com.br/ws/${ceps}/json/`);
+                const data = await res.json(); // Await the promise here
+                
+                setLogradouro(data.logradouro);
+                setBairro(data.bairro);
+                setCidade(data.localidade);
+                setEstado(data.uf);
+            } catch (error) {
+                console.error('Error fetching CEP data:', error);
+            }
+        } 
+    }
+
     const handleChange = (event) => {
         const { name, value } = event.target;
         switch (name) {
@@ -62,6 +78,7 @@ export default function Login() {
                 break
             case 'cep':
                 setCep(value)
+                handleCep(value)
                 break
             case 'logradouro':
                 setLogradouro(value)
@@ -155,9 +172,10 @@ export default function Login() {
                                 <input className="w-full border border-1 border-neutral-400 p-4" type="text" name="firstName" placeholder="Primeiro Nome" value={firstName} onChange={handleChange} required />
                                 <input className="w-full border border-1 border-neutral-400 p-4" type="text" name="lastName" placeholder="Segundo Nome" value={lastName} onChange={handleChange} required />
                             </div>
-                            <input className="border border-1 border-neutral-400 p-4" type="date" name="birthdate" placeholder="Data de Nascimento" value={birthdate} onChange={handleChange} required />
+                            <label htmlFor="birthdate">Sua data de Nascimento</label>
+                            <input className="border border-1 border-neutral-400 p-4" type="date" id="birthdate" name="birthdate" placeholder="Data de Nascimento" value={birthdate} onChange={handleChange} required />
                             <div className="w-full flex gap-2 justify-between">
-                                <input className="w-full border border-1 border-neutral-400 p-4" type="tel" name="phoneNumber" placeholder="Seu número" value={phoneNumber} onChange={handleChange} required />
+                                <input className="w-full border border-1 border-neutral-400 p-4" type="tel" name="phoneNumber" placeholder="Celular" value={phoneNumber} onChange={handleChange} required />
                                 <input className="w-full border border-1 border-neutral-400 p-4" type="" name="documento" placeholder="Seu CPF" value={documento} onChange={handleChange} required />
                             </div>
                             <select className="border border-1 border-neutral-400 p-4 bg-transparent" name="gender" id="gender" value={gender} onChange={handleChange} required>
@@ -165,7 +183,7 @@ export default function Login() {
                                 <option value='F'>Feminino</option>
                             </select>
                             <div className="w-full flex gap-2 justify-between">
-                                <input className="w-full border border-1 border-neutral-400 p-4" type="" name="cep" placeholder="Seu CEP" value={cep} onChange={handleChange} required />
+                                <input className="w-full border border-1 border-neutral-400 p-4" type="number" name="cep" placeholder="Seu CEP" value={cep} onChange={handleChange} required />
                                 <input className="w-full border border-1 border-neutral-400 p-4" type="" name="estado" placeholder="Seu estado" value={estado} onChange={handleChange} required />
                             </div>
                             <div className="w-full flex gap-2 justify-between">
@@ -174,7 +192,7 @@ export default function Login() {
                             </div>
                             <div className="w-full flex gap-2 justify-between">
                                 <input className="w-full border border-1 border-neutral-400 p-4" type="" name="bairro" placeholder="Seu bairro" value={bairro} onChange={handleChange} required />
-                                <input className="w-full border border-1 border-neutral-400 p-4" type="" name="numero" placeholder="Seu número do endereço" value={numero} onChange={handleChange} required />
+                                <input className="w-full border border-1 border-neutral-400 p-4" type="number" name="numero" placeholder="Seu número do endereço" value={numero} onChange={handleChange} required />
                             </div>
                             <button type="submit" className="w-full py-3 bg-emerald-400 rounded-xl hover:scale-105 duration-500">Criar conta</button>
                         </form>

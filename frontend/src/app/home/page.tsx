@@ -2,8 +2,6 @@
 import React, { useEffect, useState } from "react";
 import SelectComponent from '../../components/content/select';
 import CalendarComponent from "../../components/content/calendar";
-import AvatarComponent from "../../components/content/avatar";
-import { Modal } from 'rsuite';
 import { FiCheckCircle } from "react-icons/fi";
 import { useAuth } from '../../api/auth';
 import mercadopago from '../../api/mercadopago';
@@ -56,12 +54,6 @@ export default function Home() {
   const [horaSelecionada, setHoraSelecionada] = useState<string | null>(null);
   const [transferStatus, setTransferStatus] = useState<string | null>(null);
   const [agendamento, setAgendamento] = useState(null);
-  const [modal, setModal] = useState(false);
-  const handleOpen = () => setModal(true);
-  const handleClose = () => {
-    setModal(false);
-    window.location.reload();
-  };
 
   const handleLogout = () => {
     logout();
@@ -119,14 +111,26 @@ export default function Home() {
   const handleAgendamento = () => {
     const criarAgendamento = async () => {
       try {
+        const dateWithTime = new Date(date);
+        const [hours, minutes] = horaSelecionada.split(':');
+  
+        // Ajuste da hora, minuto, segundo e milissegundo
+        dateWithTime.setHours(parseInt(hours, 10));
+        dateWithTime.setMinutes(parseInt(minutes, 10));
+        dateWithTime.setSeconds(0);
+        dateWithTime.setMilliseconds(0);
+  
+        // Corrige o problema do fuso horário
+        const localOffset = dateWithTime.getTimezoneOffset() * 60000;
+        const correctedDate = new Date(dateWithTime.getTime() - localOffset);
+  
         const requestData = {
           clienteID: cliente._id,
-          data: date.toISOString(),
+          data: correctedDate.toISOString(),
           arenaID: arena._id,
           servicoID: '667db3b4524787cc6dd8b13f',
           quadras: court,
         };
-
         const response = await fetch('https://agendamento-azure.vercel.app/agendamento/', {
           method: 'POST',
           headers: {
@@ -160,7 +164,7 @@ export default function Home() {
           await fetch(`https://agendamento-azure.vercel.app/agendamento/${agendamentoId}`, {
             method: 'PUT',
           });
-          handleOpen();
+          setTransferStatus('approved')
           break;
         } else {
           console.log('Pagamento ainda não aprovado. Verificando novamente em 5 segundos.');
@@ -176,68 +180,69 @@ export default function Home() {
     <main>
       <div className="w-full h-screen flex items-center flex-col py-4">
         <div className="w-8/12 items-center flex justify-between">
-          <span className="text-xl font-black">{arena.nome || 'Nome da Arena'}</span>
-          <div className="flex gap-3">
             {cliente && <span>Bem vindo, {cliente.person.nome.first_name}</span>}
             <button onClick={handleLogout}>Logout</button>
-          </div>
         </div>
         
         <div className="w-full h-full flex flex-col py-16 items-center">
+              <span className="text-xl font-black py-4">{arena.nome || 'Nome da Arena'}</span>
 
-        <div className="w-8/12 flex items-center flex-col gap-5">
-          <div>
-            <CalendarComponent date={date} setDate={setDate} />
-          </div>
-          {arena && ( // Verifica se arena está definido antes de passar para o SelectComponent
-            <SelectComponent setCourt={setCourt} quadras={arena.quadras} />
-          )}
-        </div>
-        <div className="w-8/12 flex items-center flex-col py-4">
-          <span className="text-xl font-bold">Quadra {court} | {date?.toLocaleDateString()}</span>
-          <div className="shrink-0 bg-border h-[1px] w-full my-4"></div>
-          {horasDisponiveis.length > 0 ? (
-            <>
-              <span className="text-xl font-bold">Horarios Disponiveis</span>
-              <div className="grid grid-cols-3 py-4 gap-3">
-                {horasDisponiveis.map((time, index) => (
-                  <button className={`p-3 rounded-xl text-base duration-500 ${horaSelecionada === time ? 'bg-emerald-400' : 'bg-neutral-300'}`}
-                  value={time}
-                  key={index}
-                  onClick={() => handleTimeClick(time)}
-                  >
-                    {time}
-                  </button>
-                ))}
-              </div>
-              <button className="p-4 text-md bg-emerald-400 rounded-xl hover:scale-105 duration-500" onClick={handleAgendamento}>Agendar</button>
-            </>
-          ) : (
-            <span className="text-lg font-bold">Sem horários disponíveis</span>
-          )}
-        </div>
-        {agendamento ?
-         <div className="flex flex-col justify-center items-center text-center py-10">
-         <span>Seu agendamento sera efetuado apenas após o pagamento.</span>
-         <img style={{width: '10rem'}} className="object-fit border-none w-6/12" src={`data:image/jpeg;base64,${agendamento.payment.point_of_interaction.transaction_data.qr_code_base64}`} alt="QR Code" /> 
-         <span>O QR Code tem válidade de 30 minutos</span>
-         </div> : 
-         null}
-          <div>
-              <Modal open={modal} onClose={handleClose}>
-                <Modal.Header>
-                  <span className="flex items-center gap-2 text-xl text-green-500"><FiCheckCircle /> Sucesso</span>
-                </Modal.Header>
-              <Modal.Body>
-                O seu pagamento foi efetuado com sucesso! Seu agendamento já foi concluído.
-              </Modal.Body>
-              <Modal.Footer>
-                <button onClick={handleClose} >
-                  Ok
-                </button>
-              </Modal.Footer>
-            </Modal>
-          </div>
+              {agendamento ? (
+                    <div className="flex  w-8/12 flex-col justify-center items-center text-center py-10">
+                      {transferStatus == 'pending' ? (
+                        <div className="flex w-full flex-col items-center gap-10">
+                          <span>Seu agendamento sera efetuado apenas após o pagamento.</span>
+                          <span>Valor {agendamento.payment.transaction_amount} R$</span>
+                          <img style={{width: '10rem'}} className="object-fit border-none w-6/12" src={`data:image/jpeg;base64,${agendamento.payment.point_of_interaction.transaction_data.qr_code_base64}`} alt="QR Code" /> 
+                          <span>O QR Code tem válidade de 30 minutos</span>
+                          <span className="break-all">{agendamento.payment.point_of_interaction.transaction_data.qr_code}</span>
+                        </div>
+
+                      ) : (
+                        <div className="flex flex-col gap-4">
+                          <span className="flex items-center gap-3 text-xl"><FiCheckCircle size='2em' style={{color: "green"}}/> Seu agendamento foi feito com sucesso!</span>
+                          <span className="text-xl">{agendamento.agendamentos.data}</span>
+                          <span className="text-xl">Quadra {agendamento.agendamentos.quadras}</span>
+                          <button onClick={() => {
+                            window.location.reload()
+                          }}>Voltar</button>
+                        </div>
+                      )}
+                    </div>  
+                  ) : ( 
+                    <>
+                    <div className="w-8/12 flex items-center flex-col gap-5">
+                    <div>
+                      <CalendarComponent date={date} setDate={setDate} />
+                    </div>
+                    {arena && ( // Verifica se arena está definido antes de passar para o SelectComponent
+                      <SelectComponent setCourt={setCourt} quadras={arena.quadras} />
+                    )}
+                    </div>
+                    <div className="w-8/12 flex items-center flex-col py-4">
+                      <span className="text-xl font-bold">Quadra {court} | {date?.toLocaleDateString()}</span>
+                      <div className="shrink-0 bg-border h-[1px] w-full my-4"></div>
+                        {horasDisponiveis.length > 0 ? (
+                          <>
+                            <span className="text-xl font-bold">Horarios Disponiveis</span>
+                            <div className="grid grid-cols-3 py-4 gap-3">
+                              {horasDisponiveis.map((time, index) => (
+                                <button className={`p-3 rounded-xl text-base duration-500 ${horaSelecionada === time ? 'bg-emerald-400' : 'bg-neutral-300'}`}
+                                value={time}
+                                key={index}
+                                onClick={() => handleTimeClick(time)}
+                                >
+                                  {time}
+                                </button>
+                              ))}
+                            </div>
+                            <button className="p-4 text-md bg-emerald-400 rounded-xl hover:scale-105 duration-500" onClick={handleAgendamento}>Agendar</button>
+                          </>
+                        ) :  <span className="text-lg font-bold">Sem horários disponíveis</span>}
+                        </div>
+                      </>
+                      )
+                }
          </div>
       </div>
     </main>

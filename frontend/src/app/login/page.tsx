@@ -7,6 +7,7 @@ import { useAuth } from '../../api/auth';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('')
   const { login } = useAuth();
 
   useEffect(() => {
@@ -20,21 +21,24 @@ export default function Login() {
     }
   }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(email, password)
-    login(email, password);
+    const errorMessage = await login(email, password);
+    if (errorMessage) {
+      setError(errorMessage); // Set the error message
+    }
   };
 
   return (
     <div className="w-full h-screen flex items-center justify-center flex-col py-4">
       <div className="flex items-center justify-center gap-10 flex-col md:flex-col w-10/12 h-full md:w-5/12">
-        <div className="flex w-full flex-col md:flex-row md:text-start text-center justify-between gap-2">
+        <div className="flex w-full flex-col text-center items-center gap-10">
           <div>
             <h1 className="text-xl font-bold">Agendamento de Quadras</h1>
             <span>Entre na sua conta!</span>
           </div>
-          <div className="flex flex-col md:w-6/12 ">
+          <div className="flex flex-col text-start md:w-6/12 ">
+            <span style={{color: 'red'}}>{error}</span>
             <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
               <input
                 className="border border-1 border-neutral-400 p-4"
