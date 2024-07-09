@@ -39,5 +39,4 @@ Este repositório contém o código-fonte de um sistema de agendamento de quadra
 ## Deploy do Projeto
 
 - API https://agendamento-azure.vercel.app/
-- Painel  https://agendamentopainel-terukimateus-terukimateus-projects.vercel.app
 - Agendamento Cliente https://agendamento-quadras-cliente.vercel.app/
